@@ -13,6 +13,7 @@ color brown = #300000;
 color yellow = #fff300;
 color purple = #4F266C;
 color orange = #ff6f00;
+color gray = #D8D8D8;
 
 // Hue slider variables
 float hueX = 20;
@@ -20,30 +21,47 @@ float hueY = 260;
 float hueW = 260;
 float hueH = 30;
 
-// Stamp system
-boolean stampMode = false;
-int stampType = 0; // 1 = smiley, 2 = heart, 3 = skull
+// Stamp toggle system 
+boolean[] stampOn = new boolean[5];
+
+PImage nootnoot;
+PImage frog;
+
+PFont font;
+
+// Button sizes
+int btnW = 260;
+int btnH = 40;
+
+int saveY = 620;
+int loadY = 670;
+int clearY = 720;
+int eraserY = 770;
 
 void setup() {
+  background(gray);
   size(2000, 1000);
   sliderY = 40;
   colorMode(HSB, 360, 100, 100);
+
+  font = createFont("Segoe UI Symbol", 32);
+  textFont(font);
+
+  nootnoot = loadImage("nootnoot.jpg");
+  frog = loadImage("frog.jpg");
 }
 
 void draw() {
   drawBrush();
 
-  // Left toolbar background
   noStroke();
   fill(black);
   rect(0, 0, 300, height);
 
-  // Brush size slider
   stroke(white);
   line(50, 40, 50, 240);
   circle(50, sliderY, 20);
 
-  // Color buttons
   buttonCircle(100, 70, red);
   buttonCircle(170, 70, green);
   buttonCircle(240, 70, blue);
@@ -56,17 +74,21 @@ void draw() {
   buttonCircle(170, 210, purple);
   buttonCircle(240, 210, orange);
 
-  // Hue slider
   drawHueSlider();
-
-  // Indicators
   drawBrushSizeIndicator();
   drawColorIndicator();
 
-  // Stamp buttons
-  drawStampButton(60, 460, 1); // smiley
-  drawStampButton(140, 460, 2); // heart
-  drawStampButton(220, 460, 3); // skull
+  drawEmojiStampToggle(60, 460, stampOn[0], "☺");
+  drawEmojiStampToggle(140, 460, stampOn[1], "❤");
+  drawEmojiStampToggle(220, 460, stampOn[2], "☠");
+
+  drawImageStampToggle(60, 540, stampOn[3], nootnoot);
+  drawImageStampToggle(160, 540, stampOn[4], frog);
+
+  drawButton(20, saveY, btnW, btnH, "Save Canvas");
+  drawButton(20, loadY, btnW, btnH, "Load Canvas");
+  drawButton(20, clearY, btnW, btnH, "Clear Canvas");
+  drawButton(20, eraserY, btnW, btnH, "Eraser");
 }
 
 void drawBrush() {
@@ -90,7 +112,6 @@ void drawHueSlider() {
     rect(hueX + i, hueY, 1, hueH);
   }
 
-  // Selector line
   stroke(255);
   strokeWeight(3);
   float handleX = map(hue(currentColor), 0, 360, hueX, hueX + hueW);
@@ -119,76 +140,150 @@ void drawBrushSizeIndicator(){
   rect(20, 400, barWidth, 20);
 }
 
-// STAMP BUTTONS + STAMP DRAWING
+void drawEmojiStampToggle(int x, int y, boolean active, String emoji) {
+  if (active) fill(180);
+  else fill(255);
 
-
-void drawStampButton(int x, int y, int type) {
-  fill(255);
   stroke(0);
-  circle(x, y, 50);
+  rect(x - 30, y - 30, 60, 60, 10);
 
   fill(0);
   textAlign(CENTER, CENTER);
-  textSize(22);
+  textSize(28);
+  text(emoji, x, y);
+}
 
-  if (type == 1) text("☺", x, y);
-  if (type == 2) text("❤", x, y);
-  if (type == 3) text("☠", x, y);
+void drawImageStampToggle(int x, int y, boolean active, PImage img) {
+  if (active) fill(180);
+  else fill(255);
+
+  stroke(0);
+  rect(x - 30, y - 30, 60, 60, 10);
+
+  imageMode(CENTER);
+  image(img, x, y, 40, 40);
 }
 
 void placeStamp(float x, float y) {
-  textAlign(CENTER, CENTER);
-  textSize(brushSize * 2);
+  float s = max(brushSize * 2, 10);
 
-  if (stampType == 1) text("☺", x, y);
-  if (stampType == 2) text("❤", x, y);
-  if (stampType == 3) text("☠", x, y);
+  textAlign(CENTER, CENTER);
+  textFont(font);
+  textSize(s);
+
+  fill(currentColor);
+
+  if (stampOn[0]) text("☺", x, y);
+  if (stampOn[1]) text("❤", x, y);
+  if (stampOn[2]) text("☠", x, y);
+
+  if (stampOn[3]) image(nootnoot, x, y, s, s);
+  if (stampOn[4]) image(frog, x, y, s, s);
+}
+
+void drawButton(int x, int y, int w, int h, String label) {
+  fill(255);
+  stroke(0);
+  rect(x, y, w, h, 8);
+
+  fill(0);
+  textAlign(CENTER, CENTER);
+  textSize(18);
+  text(label, x + w/2, y + h/2);
+}
+
+void saveCanvas() {
+  save("myCanvas.png");
+}
+
+void loadCanvas() {
+  PImage loaded = loadImage("myCanvas.png");
+  if (loaded != null) {
+    image(loaded, 1000, 500);
+  }
+}
+
+void clearCanvas() {
+  fill(gray);
+  noStroke();
+  rect(300, 0, width - 300, height);
 }
 
 void mouseReleased() {
-  // Color buttons
-  if (dist(100, 70, mouseX, mouseY) < 50) { currentColor = red; stampMode = false; }
-  if (dist(170, 70, mouseX, mouseY) < 50) { currentColor = green; stampMode = false; }
-  if (dist(240, 70, mouseX, mouseY) < 50) { currentColor = blue; stampMode = false; }
 
-  if (dist(100, 140, mouseX, mouseY) < 50) { currentColor = white; stampMode = false; }
-  if (dist(170, 140, mouseX, mouseY) < 50) { currentColor = black; stampMode = false; }
-  if (dist(240, 140, mouseX, mouseY) < 50) { currentColor = brown; stampMode = false; }
+  if (dist(100, 70, mouseX, mouseY) < 25) currentColor = red;
+  if (dist(170, 70, mouseX, mouseY) < 25) currentColor = green;
+  if (dist(240, 70, mouseX, mouseY) < 25) currentColor = blue;
 
-  if (dist(100, 210, mouseX, mouseY) < 50) { currentColor = yellow; stampMode = false; }
-  if (dist(170, 210, mouseX, mouseY) < 50) { currentColor = purple; stampMode = false; }
-  if (dist(240, 210, mouseX, mouseY) < 50) { currentColor = orange; stampMode = false; }
+  if (dist(100, 140, mouseX, mouseY) < 25) currentColor = white;
+  if (dist(170, 140, mouseX, mouseY) < 25) currentColor = black;
+  if (dist(240, 140, mouseX, mouseY) < 25) currentColor = brown;
 
-  // Stamp buttons
-  if (dist(100, 420, mouseX, mouseY) < 25) { stampMode = true; stampType = 1; }
-  if (dist(170, 420, mouseX, mouseY) < 25) { stampMode = true; stampType = 2; }
-  if (dist(240, 420, mouseX, mouseY) < 25) { stampMode = true; stampType = 3; }
+  if (dist(100, 210, mouseX, mouseY) < 25) currentColor = yellow;
+  if (dist(170, 210, mouseX, mouseY) < 25) currentColor = purple;
+  if (dist(240, 210, mouseX, mouseY) < 25) currentColor = orange;
+
+  if (mouseX < 300) {
+    for (int i = 0; i < 5; i++) stampOn[i] = false;
+  }
+
+  if (dist(60, 460, mouseX, mouseY) < 30) toggleStamp(0);
+  if (dist(140, 460, mouseX, mouseY) < 30) toggleStamp(1);
+  if (dist(220, 460, mouseX, mouseY) < 30) toggleStamp(2);
+
+  if (dist(60, 540, mouseX, mouseY) < 30) toggleStamp(3);
+  if (dist(160, 540, mouseX, mouseY) < 30) toggleStamp(4);
+
+  if (mouseX > 20 && mouseX < 20 + btnW &&
+      mouseY > saveY && mouseY < saveY + btnH) saveCanvas();
+
+  if (mouseX > 20 && mouseX < 20 + btnW &&
+      mouseY > loadY && mouseY < loadY + btnH) loadCanvas();
+
+  if (mouseX > 20 && mouseX < 20 + btnW &&
+      mouseY > clearY && mouseY < clearY + btnH) clearCanvas();
+      
+  if (mouseX > 20 && mouseX < + btnW&&
+      mouseY > eraserY && mouseY < eraserY + btnH) currentColor = gray;
+}
+
+void toggleStamp(int index) {
+  boolean newState = !stampOn[index];
+  for (int i = 0; i < 5; i++) stampOn[i] = false;
+  stampOn[index] = newState;
 }
 
 void mousePressed() {
-  if (stampMode && mouseX > 300) {
-    placeStamp(mouseX, mouseY);
+  if (mouseX > 300) {
+    for (int i = 0; i < 5; i++) {
+      if (stampOn[i]) {
+        placeStamp(mouseX, mouseY);
+        return;
+      }
+    }
   }
 }
 
 void mouseDragged() {
-  // Brush size slider
+
   if (mouseY > 30 && mouseY < 250 && mouseX > 40 && mouseX < 60) {
     sliderY = mouseY;
     brushSize = sliderY - 30;
   }
 
-  // Hue slider
   if (mouseY > hueY && mouseY < hueY + hueH &&
       mouseX > hueX && mouseX < hueX + hueW) {
 
     float h = map(mouseX, hueX, hueX + hueW, 0, 360);
     currentColor = color(h, 100, 100);
-    stampMode = false;
+
+    for (int i = 0; i < 5; i++) stampOn[i] = false;
   }
 
-  // Drawing (only if NOT stamping)
-  if (!stampMode && mouseX > 300) {
+  boolean stamping = false;
+  for (int i = 0; i < 5; i++) if (stampOn[i]) stamping = true;
+
+  if (!stamping && mouseX > 300) {
     strokeWeight(brushSize);
     stroke(currentColor);
     line(pmouseX, pmouseY, mouseX, mouseY);
